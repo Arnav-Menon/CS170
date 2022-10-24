@@ -1,5 +1,6 @@
 import heapq as hq
 import copy
+import time
 
 level_1 = [[1,2,3],[4,5,6],[7,8,0]] # depth 0
 level_2 = [[1,2,3],[4,5,6],[0,7,8]] # depth 2
@@ -12,18 +13,20 @@ level_8 = [[0,7,2],[4,6,1],[3,5,8]] # depth 24
 
 goal_state = [[1,2,3],[4,5,6],[7,8,0]]
 
-visitedStates = []
-exploreStates = []
+visitedStates = [] # list of nodes we have visited
+exploreStates = [] # list of nodes we have to visit
 
 class Node:
     def __init__(self, board, level, f, parent):
-        self.board = board # [[], [], []]
-        self.level = level
-        self.f = f
-        self.parent = parent
+        self.board = board # [[1,2,3], [4,5,6], [7,8,0]]
+        self.level = level # the depth of the node in the tree
+        self.f = f # f(n) value for the node
+        self.parent = parent # keeps reference to parent node
 
+    # g is the cost, which is always the level in this case bc the cost of "moving" the tile for this problem is always 1
+    # h is the heurisitc value, which is either Manhattan Distance or Misplaced Tiles
     def fn(self, g, h=0):
-        return g + h
+        return self.g() + h
 
     def g(self):
         return self.level
@@ -32,21 +35,23 @@ class Node:
         x, y = self.findBlank()
         possibleMoves = [[x-1, y], [x+1, y], [x, y-1], [x, y+1]]
         actualMoves = self.isValid(possibleMoves)
+        
         print("VALID MOVES:", actualMoves)
+        
         for m in actualMoves:
             # m = [1,2]
             child = copy.deepcopy(self)
-            # print("child type", type(child))
+
             temp = child.board[m[0]][m[1]]
-            # print(type(temp))
             child.board[m[0]][m[1]] = child.board[x][y]
             child.board[x][y] = temp
-            # print(type(child.board))
+
             newNode = Node(child.board, self.level + 1, 0, self)
-            visitedBoards = [node.board for node in visitedStates]
+
+            visitedBoards = [n.board for n in visitedStates]
+
             if newNode.board not in visitedBoards:
                 hq.heappush(exploreStates, newNode)
-                # newNode.printNicely()
 
     def isValid(self, possibleMoves):
         actualMoves = []
@@ -100,11 +105,14 @@ class Puzzle:
 
             
 if __name__ == "__main__":
+    start = time.time()
+
     puzzle = Puzzle(3)
 
-    node = Node(level_3, 0, 0, None)
+    node = Node(level_4, 0, 0, None)
     hq.heappush(exploreStates, node)
 
     answer = puzzle.solve()
 
     print("DEPTH:", answer)
+    print("Solution took",  time.time() - start, "seconds")
