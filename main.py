@@ -28,7 +28,7 @@ class Node:
     def fn(self, g, h=0):
         return g + h
 
-    # this is to calculate h value for fn function
+    # this is to calculate h value for fn function, using Misplaced Tiles heuristic
     def calcMisplacedTiles(self):
         misplacedTiles = 0
         counter = 1
@@ -39,13 +39,25 @@ class Node:
                 counter += 1
         return misplacedTiles
 
+    # this is to calculate h value for fn function, using Manhattan Distance heuristic
+    def calcManhattanDistance(self):
+        manhattanDistance = 0
+        for i in range(0, len(self.board)):
+            for j in range(0, len(self.board)):
+                if goal_state[i][j] != 0:
+                    x1, y1 = self.getCoordinates(self.board[i][j])
+                    # print(self.board[i][j], x1, y1)
+                    x2, y2 = self.getCoordinates(goal_state[i][j])
+                    # print(goal_state[i][j], x2, y2)
+                    manhattanDistance += abs(x1-x2) + abs(y1-y2)
+                    # print("-----------------------")
+        return manhattanDistance
 
-    def exploreMoves(self):
-        x, y = self.findBlank()
+    # expand potential children to eventually traverse down tree
+    def exploreMoves(self, heuristic):
+        x, y = self.getCoordinates(0)
         possibleMoves = [[x-1, y], [x+1, y], [x, y-1], [x, y+1]]
         actualMoves = self.isValid(possibleMoves)
-        
-        print("VALID MOVES:", actualMoves)
         
         for m in actualMoves:
             # m = [1,2]
@@ -55,7 +67,13 @@ class Node:
             child.board[m[0]][m[1]] = child.board[x][y]
             child.board[x][y] = temp
 
-            fn = self.fn(self.level+1, self.calcMisplacedTiles())
+            if heuristic == 1:
+                fn = self.fn(self.level+1)
+            elif heuristic == 2:
+                fn = self.fn(self.level+1, self.calcMisplacedTiles())
+            else:
+                fn = self.fn(self.level+1, self.calcManhattanDistance())
+
             newNode = Node(child.board, self.level + 1, fn, self)
 
             visitedBoards = [n.board for n in visitedStates]
@@ -63,6 +81,7 @@ class Node:
             if newNode.board not in visitedBoards:
                 hq.heappush(exploreStates, newNode)
 
+    # checks to see if move is a valid move within the board
     def isValid(self, possibleMoves):
         actualMoves = []
         for move in possibleMoves:
@@ -70,17 +89,25 @@ class Node:
                 actualMoves.append(move)
         return actualMoves
 
-    def findBlank(self):
+    # gets position of value on the board
+    def getCoordinates(self, value):
         for i in range(0, len(self.board)):
             for j in range(0, len(self.board)):
-                if self.board[i][j] == 0:
+                if self.board[i][j] == value:
                     return i, j
 
+    # helper function to nicely print board in 3x3 shape
+    '''
+    [1, 2, 3]
+    [4, 5, 6]
+    [7, 8, 0]
+    '''
     def printNicely(self):
         print("-------------------")
         for i in self.board:
             print(i)
 
+    # need this wrapper for hq.heappush() call
     def __lt__(self, other):
         return self.f < other.f
 
@@ -88,7 +115,8 @@ class Puzzle:
     def __init__(self, n=3):
         self.n = n
 
-    def solve(self):
+    # solves the puzzle
+    def solve(self, heuristic):
         # deque from exploreStates
         # if node == goal state, done
         # else, explore children and run again
@@ -105,56 +133,59 @@ class Puzzle:
                 return node.level
 
             # check children
-            node.exploreMoves()
+            node.exploreMoves(heurisitc)
 
+    # need this wrapper for hq.heappush() call
     def __lt__(self, node1, node2):
         return node1.f < node2.f
 
             
 if __name__ == "__main__":
-    # start = time.time()
+    start = time.time()
 
-    # puzzle = Puzzle(3)
+    puzzle = Puzzle(3)
 
-    # node = Node(level_8, 0, 0, None)
-    # hq.heappush(exploreStates, node)
+    heurisitc = int(input("1 for UCS, 2 for Misplaced Tiles, 3 for Manhattan "))
 
-    # answer = puzzle.solve()
+    node = Node(level_6, 0, 0, None)
+    hq.heappush(exploreStates, node)
 
-    # print("DEPTH:", answer)
-    # print("Solution took",  time.time() - start, "seconds")
+    answer = puzzle.solve(heurisitc)
 
-    node1 = Node(level_1, 0, 0, None)
-    node2 = Node(level_2, 0, 0, None)
-    node3 = Node(level_3, 0, 0, None)
-    node4 = Node(level_4, 0, 0, None)
-    node5 = Node(level_5, 0, 0, None)
-    node6 = Node(level_6, 0, 0, None)
-    node7 = Node(level_7, 0, 0, None)
-    node8 = Node(level_8, 0, 0, None)
+    print("DEPTH:", answer)
+    print("Solution took",  time.time() - start, "seconds")
+
+    # node1 = Node(level_1, 0, 0, None)
+    # node2 = Node(level_2, 0, 0, None)
+    # node3 = Node(level_3, 0, 0, None)
+    # node4 = Node(level_4, 0, 0, None)
+    # node5 = Node(level_5, 0, 0, None)
+    # node6 = Node(level_6, 0, 0, None)
+    # node7 = Node(level_7, 0, 0, None)
+    # node8 = Node(level_8, 0, 0, None)
 
 
     
-    node1.printNicely()
-    print(node1.calcManhattanDistance())
+    # node1.printNicely()
+    # print(node1.calcManhattanDistance())
 
-    node2.printNicely()
-    print(node2.calcManhattanDistance())
+    # node2.printNicely()
+    # print(node2.calcManhattanDistance())
 
-    node3.printNicely()
-    print(node3.calcManhattanDistance())
+    # node3.printNicely()
+    # print(node3.calcManhattanDistance())
 
-    node4.printNicely()
-    print(node4.calcManhattanDistance())
+    # node4.printNicely()
+    # print(node4.calcManhattanDistance())
 
-    node5.printNicely()
-    print(node5.calcManhattanDistance())
+    # node5.printNicely()
+    # print(node5.calcManhattanDistance())
 
-    node6.printNicely()
-    print(node6.calcManhattanDistance())
+    # node6.printNicely()
+    # print(node6.calcManhattanDistance())
 
-    node7.printNicely()
-    print(node7.calcManhattanDistance())
+    # node7.printNicely()
+    # print(node7.calcManhattanDistance())
 
-    node8.printNicely()
-    print(node8.calcManhattanDistance())
+    # node8.printNicely()
+    # print(node8.calcManhattanDistance())
