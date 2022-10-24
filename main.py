@@ -18,18 +18,27 @@ exploreStates = [] # list of nodes we have to visit
 
 class Node:
     def __init__(self, board, level, f, parent):
-        self.board = board # [[1,2,3], [4,5,6], [7,8,0]]
+        self.board = board # ex. [[1,2,3], [4,5,6], [7,8,0]]
         self.level = level # the depth of the node in the tree
         self.f = f # f(n) value for the node
         self.parent = parent # keeps reference to parent node
 
-    # g is the cost, which is always the level in this case bc the cost of "moving" the tile for this problem is always 1
-    # h is the heurisitc value, which is either Manhattan Distance or Misplaced Tiles
+    # self.level, or g, is the cost, which is always the level in this case bc the cost of "moving" the tile for this problem is always 1
+    # h is the heurisitc value, which is either Manhattan Distance or Misplaced Tiles, or 0 for UCS
     def fn(self, g, h=0):
-        return self.g() + h
+        return g + h
 
-    def g(self):
-        return self.level
+    # this is to calculate h value for fn function
+    def calcMisplacedTiles(self):
+        misplacedTiles = 0
+        counter = 1
+        for i in range(0, len(self.board)):
+            for j in range(0, len(self.board)):
+                if self.board[i][j] != 0 and self.board[i][j] != counter:
+                    misplacedTiles += 1
+                counter += 1
+        return misplacedTiles
+
 
     def exploreMoves(self):
         x, y = self.findBlank()
@@ -46,7 +55,8 @@ class Node:
             child.board[m[0]][m[1]] = child.board[x][y]
             child.board[x][y] = temp
 
-            newNode = Node(child.board, self.level + 1, 0, self)
+            fn = self.fn(self.level+1, self.calcMisplacedTiles())
+            newNode = Node(child.board, self.level + 1, fn, self)
 
             visitedBoards = [n.board for n in visitedStates]
 
@@ -67,9 +77,9 @@ class Node:
                     return i, j
 
     def printNicely(self):
+        print("-------------------")
         for i in self.board:
             print(i)
-        print("-------------------")
 
     def __lt__(self, other):
         return self.f < other.f
@@ -79,9 +89,9 @@ class Puzzle:
         self.n = n
 
     def solve(self):
-        # deque from exploreNodes
+        # deque from exploreStates
         # if node == goal state, done
-        # else, do stuff
+        # else, explore children and run again
 
         while len(exploreStates) != 0:
             node = hq.heappop(exploreStates)
@@ -89,11 +99,8 @@ class Puzzle:
             hq.heappush(visitedStates, node)
             node.printNicely()
 
-            # if node.level == 8:
-                # return 2
-
             if node.board == goal_state:
-                # write function that prints path to solution from root
+                # TODO: write function that prints path to solution from root
                 # use parent to backwards traverse
                 return node.level
 
@@ -105,14 +112,49 @@ class Puzzle:
 
             
 if __name__ == "__main__":
-    start = time.time()
+    # start = time.time()
 
-    puzzle = Puzzle(3)
+    # puzzle = Puzzle(3)
 
-    node = Node(level_4, 0, 0, None)
-    hq.heappush(exploreStates, node)
+    # node = Node(level_8, 0, 0, None)
+    # hq.heappush(exploreStates, node)
 
-    answer = puzzle.solve()
+    # answer = puzzle.solve()
 
-    print("DEPTH:", answer)
-    print("Solution took",  time.time() - start, "seconds")
+    # print("DEPTH:", answer)
+    # print("Solution took",  time.time() - start, "seconds")
+
+    node1 = Node(level_1, 0, 0, None)
+    node2 = Node(level_2, 0, 0, None)
+    node3 = Node(level_3, 0, 0, None)
+    node4 = Node(level_4, 0, 0, None)
+    node5 = Node(level_5, 0, 0, None)
+    node6 = Node(level_6, 0, 0, None)
+    node7 = Node(level_7, 0, 0, None)
+    node8 = Node(level_8, 0, 0, None)
+
+
+    
+    node1.printNicely()
+    print(node1.calcManhattanDistance())
+
+    node2.printNicely()
+    print(node2.calcManhattanDistance())
+
+    node3.printNicely()
+    print(node3.calcManhattanDistance())
+
+    node4.printNicely()
+    print(node4.calcManhattanDistance())
+
+    node5.printNicely()
+    print(node5.calcManhattanDistance())
+
+    node6.printNicely()
+    print(node6.calcManhattanDistance())
+
+    node7.printNicely()
+    print(node7.calcManhattanDistance())
+
+    node8.printNicely()
+    print(node8.calcManhattanDistance())
