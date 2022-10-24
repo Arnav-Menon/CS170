@@ -16,11 +16,11 @@ visitedStates = []
 exploreStates = []
 
 class Node:
-    def __init__(self, board, level, f):
+    def __init__(self, board, level, f, parent):
         self.board = board # [[], [], []]
         self.level = level
         self.f = f
-        hq.heappush(visitedStates, self.board)
+        self.parent = parent
 
     def fn(self, g, h=0):
         return g + h
@@ -32,29 +32,21 @@ class Node:
         x, y = self.findBlank()
         possibleMoves = [[x-1, y], [x+1, y], [x, y-1], [x, y+1]]
         actualMoves = self.isValid(possibleMoves)
-        # print(actualMoves)
+        print("VALID MOVES:", actualMoves)
         for m in actualMoves:
             # m = [1,2]
-            child = copy.deepcopy(self.board)
-            temp = child[m[0]][m[1]]
-            child[m[0]][m[1]] = child[x][y]
-            child[x][y] = temp
-            newNode = Node(child, 0, 0)
-            hq.heappush(exploreStates, newNode)
-            newNode.printNicely()
-
-    def solve(self):
-        # deque from exploreNodes
-        # if node == goal state, done
-        # else, do stuff
-
-        while len(exploreStates) != 0:
-            node = hq.heappop(exploreStates)
-            hq.heappush(visitedStates, node)
-
-            # check children
-            node.exploreMoves()
-
+            child = copy.deepcopy(self)
+            # print("child type", type(child))
+            temp = child.board[m[0]][m[1]]
+            # print(type(temp))
+            child.board[m[0]][m[1]] = child.board[x][y]
+            child.board[x][y] = temp
+            # print(type(child.board))
+            newNode = Node(child.board, self.level + 1, 0, self)
+            visitedBoards = [node.board for node in visitedStates]
+            if newNode.board not in visitedBoards:
+                hq.heappush(exploreStates, newNode)
+                # newNode.printNicely()
 
     def isValid(self, possibleMoves):
         actualMoves = []
@@ -81,11 +73,38 @@ class Puzzle:
     def __init__(self, n=3):
         self.n = n
 
-    def solve():
-        pass
+    def solve(self):
+        # deque from exploreNodes
+        # if node == goal state, done
+        # else, do stuff
 
+        while len(exploreStates) != 0:
+            node = hq.heappop(exploreStates)
+            print("Level:", node.level)
+            hq.heappush(visitedStates, node)
+            node.printNicely()
+
+            # if node.level == 8:
+                # return 2
+
+            if node.board == goal_state:
+                # write function that prints path to solution from root
+                # use parent to backwards traverse
+                return node.level
+
+            # check children
+            node.exploreMoves()
+
+    def __lt__(self, node1, node2):
+        return node1.f < node2.f
+
+            
 if __name__ == "__main__":
-    n = Node(level_1, 0, -1)
-    n.f = n.fn(n.level)
+    puzzle = Puzzle(3)
 
-    n.exploreMoves()
+    node = Node(level_3, 0, 0, None)
+    hq.heappush(exploreStates, node)
+
+    answer = puzzle.solve()
+
+    print("DEPTH:", answer)
