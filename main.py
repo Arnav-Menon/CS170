@@ -132,10 +132,23 @@ class Puzzle:
             if node.board == goal_state:
                 # TODO: write function that prints path to solution from root
                 # use parent to backwards traverse
+                self.printSolution(node)
                 return node.level
 
             # check children
             node.exploreMoves(heuristic)
+
+    # function to print the solution given final board
+    def printSolution(self, endNode):
+        nodes = []
+        while endNode.parent:
+            nodes.append(endNode)
+            endNode = endNode.parent
+
+        nodes = nodes[::-1]
+        nodes[0].parent.printNicely()
+        for n in nodes:
+            n.printNicely()
 
     # need this wrapper for hq.heappush() call
     def __lt__(self, node1, node2):
