@@ -99,7 +99,7 @@ class Node:
                     return i, j
 
     # helper function to nicely print board in 3x3 shape
-    '''
+    ''' ex
     [1, 2, 3]
     [4, 5, 6]
     [7, 8, 0]
@@ -125,9 +125,9 @@ class Puzzle:
 
         while len(exploreStates) != 0:
             node = hq.heappop(exploreStates)
-            print("Level:", node.level)
+            # print("Level:", node.level)
             hq.heappush(visitedStates, node)
-            node.printNicely()
+            # node.printNicely()
 
             if node.board == goal_state:
                 # TODO: write function that prints path to solution from root
@@ -149,11 +149,9 @@ if __name__ == "__main__":
     option = int(input("enter 1 to solve a predefined puzzle or 2 to input your own "))
 
     if option == 1:
-        print("1")
         difficulty = int(input("select diffuclty, enter one number between 1 and 8, with 1 being the easiest, 8 being the hardest "))
         puzzle = Puzzle()
         node = Node(levels[difficulty-1], 0, 0, None)
-        node.printNicely()
 
         if heuristic == 1:
             node.f = node.fn(0)
@@ -163,12 +161,29 @@ if __name__ == "__main__":
             node.f = node.fn(0, node.calcManhattanDistance())            
 
         hq.heappush(exploreStates, node)
-        print("node.f", node.f)
         start = time.time()
         answer = puzzle.solve(heuristic)
     else:
-        print("2")
-        puzzle = Puzzle(4)
+        dimension = int(input("enter 1 number for dimension of board "))
+        puzzle = Puzzle(dimension)
+        print('''
+            Enter your puzzle, using a zero to represent the blank. 
+            Please only enter valid 8-puzzles. 
+            Enter the puzzle demilimiting the numbers with a space
+        ''')
+        board = []
+
+        for i in range(0, dimension):
+            print(f"enter row of {dimension} values: ")
+            row = input().split()
+            row = [int(x) for x in row]
+
+            board.append(row)
+
+        node = Node(board, 0, 0, None)
+        hq.heappush(exploreStates, node)
+        start = time.time()
+        
         answer = puzzle.solve(heuristic)
 
     print("DEPTH:", answer)
