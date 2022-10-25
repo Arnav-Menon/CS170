@@ -11,6 +11,8 @@ level_6 = [[1,6,7],[5,0,3],[4,8,2]] # depth 16
 level_7 = [[7,1,2],[4,8,5],[6,3,0]] # depth 20
 level_8 = [[0,7,2],[4,6,1],[3,5,8]] # depth 24
 
+levels = [level_1, level_2, level_3, level_4, level_5, level_6, level_7, level_8]
+
 goal_state = [[1,2,3],[4,5,6],[7,8,0]]
 
 visitedStates = [] # list of nodes we have visited
@@ -133,7 +135,7 @@ class Puzzle:
                 return node.level
 
             # check children
-            node.exploreMoves(heurisitc)
+            node.exploreMoves(heuristic)
 
     # need this wrapper for hq.heappush() call
     def __lt__(self, node1, node2):
@@ -141,16 +143,33 @@ class Puzzle:
 
             
 if __name__ == "__main__":
-    start = time.time()
 
-    puzzle = Puzzle(3)
+    heuristic = int(input("1 for UCS, 2 for Misplaced Tiles, 3 for Manhattan "))
 
-    heurisitc = int(input("1 for UCS, 2 for Misplaced Tiles, 3 for Manhattan "))
+    option = int(input("enter 1 to solve a predefined puzzle or 2 to input your own "))
 
-    node = Node(level_6, 0, 0, None)
-    hq.heappush(exploreStates, node)
+    if option == 1:
+        print("1")
+        difficulty = int(input("select diffuclty, enter one number between 1 and 8, with 1 being the easiest, 8 being the hardest "))
+        puzzle = Puzzle()
+        node = Node(levels[difficulty-1], 0, 0, None)
+        node.printNicely()
 
-    answer = puzzle.solve(heurisitc)
+        if heuristic == 1:
+            node.f = node.fn(0)
+        if heuristic == 2:
+            node.f = node.fn(0, node.calcMisplacedTiles())
+        elif heuristic == 3:
+            node.f = node.fn(0, node.calcManhattanDistance())            
+
+        hq.heappush(exploreStates, node)
+        print("node.f", node.f)
+        start = time.time()
+        answer = puzzle.solve(heuristic)
+    else:
+        print("2")
+        puzzle = Puzzle(4)
+        answer = puzzle.solve(heuristic)
 
     print("DEPTH:", answer)
     print("Solution took",  time.time() - start, "seconds")
