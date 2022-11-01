@@ -27,8 +27,8 @@ class Node:
         self.level = level # the depth of the node in the tree
         self.f = f # f(n) value for the node
         self.parent = parent # keeps reference to parent node
-        self.g = 0
-        self.h = 0
+        self.g = 0 # g(n) value for node
+        self.h = 0 # h(n) value for node
 
     # self.level, or g, is the cost, which is always the level in this case bc the cost of "moving" the tile for this problem is always 1
     # h is the heurisitc value, which is either Manhattan Distance or Misplaced Tiles, or 0 for UCS
@@ -67,6 +67,7 @@ class Node:
             # ex. m = [1,2]
             child = copy.deepcopy(self)
 
+            # swap empty space
             temp = child.board[m[0]][m[1]]
             child.board[m[0]][m[1]] = child.board[x][y]
             child.board[x][y] = temp
@@ -74,6 +75,7 @@ class Node:
             newNode = Node(child.board, self.level + 1, 0, self)
             newNode.g = self.level+1
 
+            # calculate different h(n) value based on user heuristic
             if heuristic == 1:
                 fn = self.fn(self.level+1)
             elif heuristic == 2:
@@ -112,7 +114,7 @@ class Node:
                     return i, j
 
     # helper function to nicely print board in 3x3 shape
-    ''' ex
+    '''
     [1, 2, 3]
     [4, 5, 6]
     [7, 8, 0]
