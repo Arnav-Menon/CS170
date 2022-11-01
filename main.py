@@ -18,12 +18,17 @@ goal_state = [[1,2,3],[4,5,6],[7,8,0]]
 visitedStates = [] # list of nodes we have visited
 exploreStates = [] # list of nodes we have to visit
 
+nodesExpanded = 0
+maxQueueSize = 0
+
 class Node:
     def __init__(self, board, level, f, parent):
         self.board = board # ex. [[1,2,3], [4,5,6], [7,8,0]]
         self.level = level # the depth of the node in the tree
         self.f = f # f(n) value for the node
         self.parent = parent # keeps reference to parent node
+        self.g = 0
+        self.h = 0
 
     # self.level, or g, is the cost, which is always the level in this case bc the cost of "moving" the tile for this problem is always 1
     # h is the heurisitc value, which is either Manhattan Distance or Misplaced Tiles, or 0 for UCS
@@ -42,46 +47,54 @@ class Node:
         return misplacedTiles
 
     # this is to calculate h value for fn function, using Manhattan Distance heuristic
-    def calcManhattanDistance(self):
+    def calcManhattanDistance(self, goal_state):
         manhattanDistance = 0
         for i in range(0, len(self.board)):
             for j in range(0, len(self.board)):
                 if goal_state[i][j] != 0:
                     x1, y1 = self.getCoordinates(self.board[i][j])
-                    # print(self.board[i][j], x1, y1)
                     x2, y2 = self.getCoordinates(goal_state[i][j])
-                    # print(goal_state[i][j], x2, y2)
                     manhattanDistance += abs(x1-x2) + abs(y1-y2)
-                    # print("-----------------------")
         return manhattanDistance
 
     # expand potential children to eventually traverse down tree
-    def exploreMoves(self, heuristic):
+    def exploreMoves(self, heuristic, goal_state):
         x, y = self.getCoordinates(0)
         possibleMoves = [[x-1, y], [x+1, y], [x, y-1], [x, y+1]]
         actualMoves = self.isValid(possibleMoves)
         
         for m in actualMoves:
-            # m = [1,2]
+            # ex. m = [1,2]
             child = copy.deepcopy(self)
 
             temp = child.board[m[0]][m[1]]
             child.board[m[0]][m[1]] = child.board[x][y]
             child.board[x][y] = temp
+            
+            newNode = Node(child.board, self.level + 1, 0, self)
+            newNode.g = self.level+1
 
             if heuristic == 1:
                 fn = self.fn(self.level+1)
             elif heuristic == 2:
-                fn = self.fn(self.level+1, self.calcMisplacedTiles())
+                hn = self.calcMisplacedTiles()
+                fn = self.fn(self.level+1, hn)
+                newNode.h = hn
+                newNode.f = fn
             else:
-                fn = self.fn(self.level+1, self.calcManhattanDistance())
+                hn = self.calcManhattanDistance(goal_state)
+                fn = self.fn(self.level+1, self.calcManhattanDistance(goal_state))
+                newNode.h = hn
+                newNode.f = fn
 
-            newNode = Node(child.board, self.level + 1, fn, self)
 
             visitedBoards = [n.board for n in visitedStates]
 
             if newNode.board not in visitedBoards:
                 hq.heappush(exploreStates, newNode)
+                global maxQueueSize
+                if len(exploreStates) > maxQueueSize:
+                    maxQueueSize += 1
 
     # checks to see if move is a valid move within the board
     def isValid(self, possibleMoves):
@@ -105,16 +118,17 @@ class Node:
     [7, 8, 0]
     '''
     def printNicely(self):
-        print("-------------------")
         for i in self.board:
             print(i)
+        print("-------------------")
 
     # need this wrapper for hq.heappush() call
     def __lt__(self, other):
         return self.f < other.f
 
 class Puzzle:
-    def __init__(self, n=3):
+    def __init__(self, goal_state, n=3):
+        self.goal_state = goal_state
         self.n = n
 
     # solves the puzzle
@@ -127,28 +141,35 @@ class Puzzle:
             node = hq.heappop(exploreStates)
             # print("Level:", node.level)
             hq.heappush(visitedStates, node)
-            # node.printNicely()
 
             if node.board == goal_state:
-                # TODO: write function that prints path to solution from root
-                # use parent to backwards traverse
                 self.printSolution(node)
                 return node.level
 
             # check children
-            node.exploreMoves(heuristic)
+            global nodesExpanded
+            nodesExpanded += 1
+            node.exploreMoves(heuristic, goal_state)
 
     # function to print the solution given final board
     def printSolution(self, endNode):
-        nodes = []
-        while endNode.parent:
-            nodes.append(endNode)
-            endNode = endNode.parent
-
-        nodes = nodes[::-1]
-        nodes[0].parent.printNicely()
-        for n in nodes:
+        if len(exploreStates) == 0:
+            n = Node(level_1, 0, 0, None)
             n.printNicely()
+        else:
+            nodes = []
+            while endNode.parent:
+                nodes.append(endNode)
+                endNode = endNode.parent
+
+            nodes = nodes[::-1]
+            print(f"The best state to expand with a g(n) = {nodes[0].g-1} and h(n) = {nodes[0].h} is")
+            nodes[0].parent.printNicely()
+            for n in nodes:
+                print(f"The best state to expand with a g(n) = {n.g} and h(n) = {n.h} is")
+                n.printNicely()
+
+            print("Goal state!")
 
     # need this wrapper for hq.heappush() call
     def __lt__(self, node1, node2):
@@ -163,15 +184,17 @@ if __name__ == "__main__":
 
     if option == 1:
         difficulty = int(input("select diffuclty, enter one number between 1 and 8, with 1 being the easiest, 8 being the hardest "))
-        puzzle = Puzzle()
+        goal_state = [[1,2,3], [4,5,6], [7,8,0]]
+        puzzle = Puzzle(goal_state)
         node = Node(levels[difficulty-1], 0, 0, None)
 
+        # give starting node a starting f(n) value
         if heuristic == 1:
             node.f = node.fn(0)
         if heuristic == 2:
             node.f = node.fn(0, node.calcMisplacedTiles())
         elif heuristic == 3:
-            node.f = node.fn(0, node.calcManhattanDistance())            
+            node.f = node.fn(0, node.calcManhattanDistance(goal_state))            
 
         hq.heappush(exploreStates, node)
         start = time.time()
@@ -182,57 +205,33 @@ if __name__ == "__main__":
         print('''
             Enter your puzzle, using a zero to represent the blank. 
             Please only enter valid 8-puzzles. 
-            Enter the puzzle demilimiting the numbers with a space
+            Enter the puzzle delimiting the numbers with a space
         ''')
         board = []
+        goal_state = []
+        # used to fill values of goal_state
+        current = 1
 
+        # properly take user input and convert it into list of lists
         for i in range(0, dimension):
             print(f"enter row of {dimension} values: ")
             row = input().split()
             row = [int(x) for x in row]
 
             board.append(row)
+            goal_state.append([num for num in range(current, current+dimension)])
+            current += dimension
 
         node = Node(board, 0, 0, None)
+        # specify last cell in last row should be blank spot
+        goal_state[-1][-1] = 0
         hq.heappush(exploreStates, node)
+
         start = time.time()
-        
+        puzzle.goal_state = goal_state
         answer = puzzle.solve(heuristic)
 
-    print("DEPTH:", answer)
-    print("Solution took",  time.time() - start, "seconds")
-
-    # node1 = Node(level_1, 0, 0, None)
-    # node2 = Node(level_2, 0, 0, None)
-    # node3 = Node(level_3, 0, 0, None)
-    # node4 = Node(level_4, 0, 0, None)
-    # node5 = Node(level_5, 0, 0, None)
-    # node6 = Node(level_6, 0, 0, None)
-    # node7 = Node(level_7, 0, 0, None)
-    # node8 = Node(level_8, 0, 0, None)
-
-
-    
-    # node1.printNicely()
-    # print(node1.calcManhattanDistance())
-
-    # node2.printNicely()
-    # print(node2.calcManhattanDistance())
-
-    # node3.printNicely()
-    # print(node3.calcManhattanDistance())
-
-    # node4.printNicely()
-    # print(node4.calcManhattanDistance())
-
-    # node5.printNicely()
-    # print(node5.calcManhattanDistance())
-
-    # node6.printNicely()
-    # print(node6.calcManhattanDistance())
-
-    # node7.printNicely()
-    # print(node7.calcManhattanDistance())
-
-    # node8.printNicely()
-    # print(node8.calcManhattanDistance())
+    print("solution depth was:", answer)
+    print("solution took",  time.time() - start, "seconds")
+    print("number of nodes expanded: ", nodesExpanded)
+    print("max queue size: ", maxQueueSize)
